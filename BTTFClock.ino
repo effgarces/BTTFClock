@@ -28,6 +28,19 @@
 
 //Define endereço de EEPROM para volume
 #define addr 0
+#define addr_seconds 2
+#define addr_dest_1 4
+#define addr_dest_2 8
+#define addr_dest_3 12
+#define addr_pres_1 16
+#define addr_pres_2 20
+#define addr_pres_3 24
+#define addr_dep_1 28
+#define addr_dep_2 32
+#define addr_dep_3 36
+
+//Variaveis para as datas especiais
+int dest[3], pres[3], dep[3];
 
 //variavel que contém que leds AM/PM devem acender e apgar
 byte leds = 0;
@@ -48,6 +61,7 @@ int volume = 0;
 unsigned long startTime = 0;
 unsigned long elapsedTime = 0;
 unsigned long previousTime = 0;
+int timer_duration = 0;
 
 //array com todos os displays
 TM1637Display display[] = {TM1637Display(CLK, DIO1), TM1637Display(CLK, DIO2), TM1637Display(CLK, DIO3), TM1637Display(CLK, DIO4), TM1637Display(CLK, DIO5), TM1637Display(CLK, DIO6), TM1637Display(CLK, DIO7), TM1637Display(CLK, DIO8), TM1637Display(CLK, DIO9)};
@@ -77,6 +91,20 @@ void setup()
   mp3.reset();
   mp3.setVolume(volume);
 
+  //define a duração do temporizador
+  timer_duration = EEPROM.read(addr_seconds);
+
+  //define as datas especiais
+  EEPROM.get(addr_dest_1,dest[0]);
+  EEPROM.get(addr_dest_2,dest[1]);
+  EEPROM.get(addr_dest_3,dest[2]);
+  EEPROM.get(addr_pres_1,pres[0]);
+  EEPROM.get(addr_pres_2,pres[1]);
+  EEPROM.get(addr_pres_3,pres[2]);
+  EEPROM.get(addr_dep_1,dep[0]);
+  EEPROM.get(addr_dep_2,dep[1]);
+  EEPROM.get(addr_dep_3,dep[2]);
+  
   //define o brilho de todos os displays
   for(int k = 0; k < 9; k++) {
       display[k].setBrightness(0x0f);
@@ -95,9 +123,10 @@ void loop()
   if(command == "" && digitalRead(REDBUTTON) != HIGH){
       command = "S" + String(random(4) + 1);
   }
-  //interpreta os comandos enviados, neste momento apenas dois T e S
+  //interpreta os comandos enviados
   if(command[0] == 'T'){
     //comando T, define uma nova data/hora os diferentes argumentos são separados e por fim o rtc ajustado
+    //formato T|MM|DD|YYYY|hh|mm|ss
     int cyear = getValue(command, '|', 3).toInt();
     int cmonth = getValue(command, '|', 1).toInt();
     int cday = getValue(command, '|', 2).toInt();
@@ -106,22 +135,61 @@ void loop()
     int cseconds = getValue(command, '|', 6).toInt();
     rtc.adjust(DateTime(cyear, cmonth, cday, chour , cminutes, cseconds));
   } else if(command[0] == 'V') {
+    //Define o volume
     if(command[1] == '1') {
-      mp3.setVolume(10);
-      EEPROM.write(addr, 10);
+      volume = 10;
     } else if (command[1] == '2') {
-      mp3.setVolume(15);
-      EEPROM.write(addr, 15);
+      volume = 15;
     } else if (command[1] == '3') {
-      mp3.setVolume(20);
-      EEPROM.write(addr, 20);
+      volume = 20;
     } else if (command[1] == '4') {
-      mp3.setVolume(25);
-      EEPROM.write(addr, 25);
+      volume = 25;
     } else if (command[1] == '5') {
-      mp3.setVolume(30);
-      EEPROM.write(addr, 30);
+      volume = 30;
     }
+    mp3.setVolume(volume);
+  } else if(command[0] == 'W') {
+    //Guarda o valor do volume na EEPROM
+    EEPROM.write(addr, volume); 
+  } else if(command[0] == 'X') {
+    //Define a duração do temporizador
+    timer_duration = command.substring(1).toInt();
+  } else if(command[0] == 'Z') {
+    //Guarda o valor do volume na EEPROM
+    EEPROM.write(addr_seconds, timer_duration);
+  } else if(command[0] == 'D') {
+    //define uma nova data/hora para Destination Time
+    // comando com o formato D|MMDD|YYYY|hhmm
+    dest[0] = getValue(command, '|', 1).toInt();
+    dest[1] = getValue(command, '|', 2).toInt();
+    dest[2] = getValue(command, '|', 3).toInt();
+  } else if(command[0] == 'E') {
+    //guarda na EEPROM a nova data/hora para Destination Time
+    EEPROM.put(addr_dest_1,dest[0]);
+    EEPROM.put(addr_dest_2,dest[1]);
+    EEPROM.put(addr_dest_3,dest[2]);
+  } else if(command[0] == 'M') {
+    //define uma nova data/hora para Present Time
+    // comando com o formato M|MMDD|YYYY|hhmm
+    pres[0] = getValue(command, '|', 1).toInt();
+    pres[1] = getValue(command, '|', 2).toInt();
+    pres[2] = getValue(command, '|', 3).toInt();
+  } else if(command[0] == 'N') {
+    //guarda na EEPROM a nova data/hora para Present Time
+    EEPROM.put(addr_pres_1,pres[0]);
+    EEPROM.put(addr_pres_2,pres[1]);
+    EEPROM.put(addr_pres_3,pres[2]);
+  } else if(command[0] == 'F') {
+    //define uma nova data/hora para Last Departure Time
+    // comando com o formato F|MMDD|YYYY|hhmm
+    dep[0] = getValue(command, '|', 1).toInt();
+    dep[1] = getValue(command, '|', 2).toInt();
+    dep[2] = getValue(command, '|', 3).toInt();
+  } else if(command[0] == 'G') {
+    //guarda na EEPROM a nova data/hora para Last Departure Time
+    EEPROM.put(addr_dep_1,dep[0]);
+    EEPROM.put(addr_dep_2,dep[1]);
+    EEPROM.put(addr_dep_3,dep[2]);
   } else if(command[0] == 'S') {
     // se o comando for efeito sonoro e o temporizador não estiver a correr toca o efeito escolhido
     if(command[1] == '1') {
@@ -139,9 +207,9 @@ void loop()
     startTime = millis();
     previousTime = 0;
   }
-  //verifica se existe um temporizador a corre e depois verifica o tempo passado e quando chegar os 10s, desativa o temporizador
+  //verifica se existe um temporizador a corre e depois verifica o tempo passado e quando chegar à duração definida, desativa o temporizador
   if(startTime != 0) {
-    if(elapsedTime == 10) {
+    if(elapsedTime == timer_duration) {
       elapsedTime = 0;
       startTime = 0;
       previousTime = 0;
@@ -156,28 +224,27 @@ void loop()
   command = "";
   //obtém a data/hora atual
   DateTime now = rtc.now();
-  //coloca a data 09/26 1985 09:00 na primera fila de displays e para 11/20 1955 06:38 na terceira fila
-  display[0].showNumberDecEx(926, 0b01000000, true);
-  display[1].showNumberDec(1985,true);
-  display[6].showNumberDecEx(1120, 0b01000000, true);
-  display[7].showNumberDec(1955,true);
+  //coloca a data 10/26 1985 09:00 na primera fila de displays e para 11/20 1955 06:38 na terceira fila
+  display[0].showNumberDecEx(dest[0], 0b01000000, true);
+  display[1].showNumberDec(dest[1],true);
+  display[6].showNumberDecEx(dep[0], 0b01000000, true);
+  display[7].showNumberDec(dep[1],true);
   //apenas pisca os dois pontos quando os segundos não são pares
-  
   if(now.second() % 2){
-    display[2].showNumberDecEx(900, 0b01000000, true); 
-    display[8].showNumberDecEx(638, 0b01000000, true);
+    display[2].showNumberDecEx(dest[2], 0b01000000, true); 
+    display[8].showNumberDecEx(dep[2], 0b01000000, true);
   } else {
-    display[2].showNumberDec(900, true);
-    display[8].showNumberDec(638, true);
+    display[2].showNumberDec(dest[2], true);
+    display[8].showNumberDec(dep[2], true);
   }
-  // se o temporizador estiver a decorrer muda a data/hora dos displays centrais para a data/hora 09/21 2015 07:28
+  // se o temporizador estiver a decorrer muda a data/hora dos displays centrais para a data/hora 10/21 2015 07:28
   if(startTime != 0){
-    display[3].showNumberDecEx(921, 0b01000000, true);
-    display[4].showNumberDec(2015,true);
+    display[3].showNumberDecEx(pres[0], 0b01000000, true);
+    display[4].showNumberDec(pres[1],true);
     if(now.second() % 2){
-      display[5].showNumberDecEx(728, 0b01000000, true); 
+      display[5].showNumberDecEx(pres[2], 0b01000000, true); 
     } else {
-      display[5].showNumberDec(728, true);
+      display[5].showNumberDec(pres[2], true);
     }
   } else {
     // se não houver temporizador a correr, mostra a data/hora do rtc
@@ -209,13 +276,22 @@ void loop()
   //liga os leds AM/PM corretos, de acordo com a hora
   leds = 0;
   updateShiftRegister();
-  bitSet(leds, 1);
+  if ((dest[2]/100)%100 >= 12) {
+     bitSet(leds, 2);
+  } else {
+     bitSet(leds, 1);
+  }
   if (now.hour() >= 12) {
     bitSet(leds, 4);
   } else {
     bitSet(leds, 3);
   }
-  bitSet(leds, 5);
+  if ((dest[2]/100)%100 >= 12) {
+    bitSet(leds, 6);
+  } else {
+    bitSet(leds, 5);
+  }
+  
   updateShiftRegister();
 }
 
