@@ -231,20 +231,44 @@ void loop()
   display[7].showNumberDec(dep[1],true);
   //apenas pisca os dois pontos quando os segundos não são pares
   if(now.second() % 2){
-    display[2].showNumberDecEx(dest[2], 0b01000000, true); 
-    display[8].showNumberDecEx(dep[2], 0b01000000, true);
+    if ((dest[2]/100)%100 >= 12){
+      display[2].showNumberDecEx(dest[2]-1200, 0b01000000, true); 
+    } else {
+      display[2].showNumberDecEx(dest[2], 0b01000000, true);
+    }
+    if ((dep[2]/100)%100 >= 12){
+      display[8].showNumberDecEx(dep[2]-1200, 0b01000000, true);
+    } else {
+      display[8].showNumberDecEx(dep[2], 0b01000000, true);
+    }
   } else {
-    display[2].showNumberDec(dest[2], true);
-    display[8].showNumberDec(dep[2], true);
+    if ((dest[2]/100)%100 >= 12){
+      display[2].showNumberDec(dest[2]-1200, true);
+    } else {
+      display[2].showNumberDec(dest[2], true);
+    }
+    if ((dep[2]/100)%100 >= 12){
+      display[8].showNumberDec(dep[2]-1200, true);
+    } else {
+      display[8].showNumberDec(dep[2], true);
+    }
   }
   // se o temporizador estiver a decorrer muda a data/hora dos displays centrais para a data/hora 10/21 2015 07:28
   if(startTime != 0){
     display[3].showNumberDecEx(pres[0], 0b01000000, true);
     display[4].showNumberDec(pres[1],true);
     if(now.second() % 2){
-      display[5].showNumberDecEx(pres[2], 0b01000000, true); 
+      if ((pres[2]/100)%100 >= 12){
+        display[5].showNumberDecEx(pres[2]-1200, 0b01000000, true);
+      } else {
+        display[5].showNumberDecEx(pres[2], 0b01000000, true);
+      }
     } else {
-      display[5].showNumberDec(pres[2], true);
+      if ((pres[2]/100)%100 >= 12){
+        display[5].showNumberDec(pres[2]-1200, true);
+      } else {
+        display[5].showNumberDec(pres[2], true);
+      }
     }
   } else {
     // se não houver temporizador a correr, mostra a data/hora do rtc
