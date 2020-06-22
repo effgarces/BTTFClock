@@ -286,7 +286,7 @@ void loop()
   } else {
     bitSet(leds, 3);
   }
-  if ((dest[2]/100)%100 >= 12) {
+  if ((dep[2]/100)%100 >= 12) {
     bitSet(leds, 6);
   } else {
     bitSet(leds, 5);
